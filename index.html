@@ -135,6 +135,14 @@
     margin:6px 0 2px;padding-bottom:2px;border-bottom:1px solid var(--line)
   }
   .grouplabel.mine{color:var(--brown)}
+  .pad{
+    width:100%;min-height:120px;resize:none;overflow:hidden;font-family:var(--font);font-size:12.5px;
+    line-height:1.55;border:0;background:repeating-linear-gradient(
+      transparent, transparent 18.5px, #ece7dd 18.5px, #ece7dd 19.5px);
+    padding:0;margin:2px 0 6px;color:var(--ink)
+  }
+  .pad:focus{outline:none}
+  .card.notes{border-left:4px solid var(--amber)}
   .askwrap{display:flex;align-items:center;gap:4px;margin-top:2px}
   .askdate{
     font-family:var(--font);font-size:9.5px;border:0;background:transparent;color:var(--muted);
@@ -239,6 +247,9 @@
     body.print-one .card.print-target{border-left:3px solid #000;padding:12px 14px}
     body.print-one .card.print-target .itxt{font-size:12px}
     .cadence button{display:none !important}
+    .pad{min-height:150px;font-size:10px;background:repeating-linear-gradient(
+      transparent, transparent 14.5px, #ddd 14.5px, #ddd 15px)}
+    body.print-one .pad{min-height:520px}
   }
 </style>
 </head>
@@ -303,8 +314,9 @@
     <b>Age tag</b> The number beside an item is how many weeks it has been carried.  At 4 weeks it turns amber, at 8 it turns red.  That is the signal to schedule it, delegate it, or kill it.<br>
     <b>Star</b> marks a commitment you made to someone else.  <b>W</b> marks something you are waiting on from someone else, which is the one category most likely to go missing.<br>
     <b>Start new week</b> files everything checked off into Closed out this week, bumps the date forward seven days, and ages the rest.<br>
-    <b>Superintendent cards</b> hold two lists.  Ask them for their half before the meeting and work that first.  The printer icon on a card prints that card alone, on its own page.<br>
+    <b>Printer icon</b> on any card prints that card alone, on its own page, which is how you hand a superintendent their sheet.  The icon beside it splits a card into two lists if you ever want their agenda and yours side by side.<br>
     <b>Waiting on</b> items take the date you asked.  The day count turns amber at a week and red at two.<br>
+    <b>Meeting cards</b> have a ruled pad for notes and a follow ups list underneath.  The pad clears when you start a new week and the week's notes are kept under Past weeks.<br>
     <b>Monthly review</b> does not age weekly and is not meant to be worked weekly.  Mark it reviewed and it will tell you when a month has gone by.
   </div>
 </div>
@@ -324,7 +336,7 @@
     el.style.height = (el.scrollHeight + 1) + "px";
   }
   function growAll(){
-    var list = document.querySelectorAll(".itxt, .ftxt, .card-title, .day textarea");
+    var list = document.querySelectorAll(".itxt, .ftxt, .card-title, .day textarea, .pad");
     for (var i = 0; i < list.length; i++) grow(list[i]);
   }
 
@@ -340,7 +352,7 @@
 
   /* ---------------- storage: works in the browser and in the Claude app ---------------- */
   var Store = {
-    key: "weekly-agenda-v3",
+    key: "weekly-agenda-v5",
     read: function(cb){
       var self = this;
       try{
@@ -406,11 +418,15 @@
       days: ["","","","",""],
       sections: [
         { id: uid(), title:"Erika and the board", kind:"people", note:"Decisions you need from her, and anything headed for a packet.", items:blanks() },
+        { id: uid(), title:"Rec admin meeting", kind:"notes", notepad:true, pad:"",
+          note:"Notes from the weekly meeting.  Anything with an owner drops to the follow ups below.", items:blanks(2) },
+        { id: uid(), title:"Admin meeting", kind:"notes", notepad:true, pad:"",
+          note:"Notes from the weekly meeting.  Anything you owe someone drops to the follow ups below.", items:blanks(2) },
         { id: uid(), title:"Waiting on", kind:"ops", askDate:true, note:"Handed off and not back yet.  Set the date you asked.", items:blanks() },
-        { id: uid(), title:"Chuck", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
-        { id: uid(), title:"Diana", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
-        { id: uid(), title:"Brian", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
-        { id: uid(), title:"Chris", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
+        { id: uid(), title:"Chuck", kind:"people", note:"One on one agenda.  Ask for their list before the meeting.  Clear it after.", items:blanks() },
+        { id: uid(), title:"Diana", kind:"people", note:"One on one agenda.  Ask for their list before the meeting.  Clear it after.", items:blanks() },
+        { id: uid(), title:"Brian", kind:"people", note:"One on one agenda.  Ask for their list before the meeting.  Clear it after.", items:blanks() },
+        { id: uid(), title:"Chris", kind:"people", note:"One on one agenda.  Ask for their list before the meeting.  Clear it after.", items:blanks() },
         { id: uid(), title:"Tim, parks and facilities", kind:"park", note:"Field prep, work orders, project sequencing.", items:blanks() },
         { id: uid(), title:"Mike, marketing and communications", kind:"people", note:"Brochure deadlines, campaign asks, anything the public sees.", items:blanks() },
         { id: uid(), title:"Dan, finance and budget", kind:"ops", note:"Budget calendar, variance, purchasing, P card.", items:blanks() },
@@ -534,6 +550,15 @@
       }
 
       if (sec.cadence === "monthly") card.appendChild(cadenceBar(sec));
+
+      if (sec.notepad){
+        var pad = document.createElement("textarea");
+        pad.className = "pad"; pad.value = sec.pad || "";
+        pad.placeholder = "Date, who was there, decisions, what changed";
+        pad.addEventListener("input", function(){ sec.pad = pad.value; grow(pad); save(); });
+        card.appendChild(pad);
+        card.appendChild(groupLabel("Follow ups", "mine"));
+      }
 
       if (sec.split){
         card.appendChild(groupLabel("Their agenda, first", "theirs"));
@@ -764,7 +789,11 @@
       var d = document.createElement("div");
       d.className = "hweek";
       var lines = w.completed.map(function(c){ return "&nbsp;&nbsp;" + esc(c.section) + ": " + esc(c.text); }).join("<br>");
-      d.innerHTML = "<b>Week of " + esc(w.weekOf) + "</b> &nbsp;(" + w.completed.length + " closed)<br>" + lines;
+      var notes = (w.notes || []).map(function(n){
+        return "&nbsp;&nbsp;<i>" + esc(n.title) + "</i><br>&nbsp;&nbsp;&nbsp;&nbsp;" + esc(n.text).replace(/\n/g,"<br>&nbsp;&nbsp;&nbsp;&nbsp;");
+      }).join("<br>");
+      d.innerHTML = "<b>Week of " + esc(w.weekOf) + "</b> &nbsp;(" + w.completed.length + " closed)<br>" + lines +
+                    (notes ? "<br>" + notes : "");
       box.appendChild(d);
     });
   }
@@ -827,7 +856,14 @@
     data.focus.forEach(function(f){
       if (f.done && f.text.trim()) closed.push({ section:"Focus", text: f.text });
     });
-    data.archive.push({ weekOf: data.weekOf, completed: closed });
+    var notes = [];
+    data.sections.forEach(function(sec){
+      if (sec.notepad && (sec.pad || "").trim()){
+        notes.push({ title: sec.title, text: sec.pad });
+        sec.pad = "";
+      }
+    });
+    data.archive.push({ weekOf: data.weekOf, completed: closed, notes: notes });
     if (data.archive.length > 26) data.archive.shift();
 
     var p = data.weekOf.split("-");
@@ -853,8 +889,10 @@
     out.push("");
     data.sections.forEach(function(sec){
       var live = sec.items.filter(function(i){ return i.text.trim(); });
-      if (!live.length) return;
+      var pad = (sec.pad || "").trim();
+      if (!live.length && !pad) return;
       out.push(sec.title.toUpperCase());
+      if (pad){ out.push(pad); if (live.length) out.push("  Follow ups:"); }
       var lastSide = null;
       live.forEach(function(i){
         if (sec.split){
@@ -923,7 +961,10 @@
   });
   document.getElementById("btnClear").addEventListener("click", function(){
     if (!confirm("Remove every item but keep the section headings?")) return;
-    data.sections.forEach(function(s){ s.items = s.split ? splitBlanks() : blanks(); });
+    data.sections.forEach(function(s){
+      s.items = s.split ? splitBlanks() : blanks();
+      if (s.notepad) s.pad = "";
+    });
     data.focus.forEach(function(f){ f.text = ""; f.done = false; });
     data.days = ["","","","",""];
     save(); renderAll(); toast("Cleared.  The headings are still here.");
