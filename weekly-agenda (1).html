@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weekly Agenda</title>
+<style>
+  :root{
+    --cyan:#00A9CE;
+    --cyan-deep:#007c98;
+    --brown:#5C462B;
+    --ink:#1d1c1a;
+    --muted:#7a736a;
+    --line:#d8d2c8;
+    --paper:#fbfaf7;
+    --card:#ffffff;
+    --warm:#f3efe7;
+    --amber:#c47f1a;
+    --red:#a8382b;
+    --font: Aptos, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font);
+    color:var(--ink);
+    background:var(--paper);
+    font-size:14px;
+    line-height:1.35;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1500px;margin:0 auto;padding:18px 22px 80px}
+
+  /* ---------- masthead ---------- */
+  .masthead{
+    display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;
+    border-bottom:3px solid var(--brown);padding-bottom:10px;margin-bottom:6px;
+  }
+  .mast-title{font-size:26px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;margin:0}
+  .mast-sub{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:2px 0 0}
+  .mast-right{margin-left:auto;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+  .weekfield{display:flex;align-items:baseline;gap:8px}
+  .weekfield label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+  input[type=date]{
+    font-family:var(--font);font-size:15px;border:0;border-bottom:2px solid var(--cyan);
+    background:transparent;padding:2px 4px;color:var(--ink)
+  }
+
+  /* ---------- toolbar ---------- */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 18px;align-items:center}
+  button{
+    font-family:var(--font);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    border:1.5px solid var(--brown);background:var(--card);color:var(--brown);
+    padding:7px 12px;cursor:pointer;border-radius:2px;transition:.12s;
+  }
+  button:hover{background:var(--brown);color:#fff}
+  button:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+  button.primary{background:var(--cyan);border-color:var(--cyan);color:#fff}
+  button.primary:hover{background:var(--cyan-deep);border-color:var(--cyan-deep)}
+  button.ghost{border-color:var(--line);color:var(--muted)}
+  button.ghost:hover{background:var(--warm);color:var(--ink)}
+  .spacer{flex:1}
+  .searchbox{
+    font-family:var(--font);font-size:13px;padding:7px 10px;border:1.5px solid var(--line);
+    border-radius:2px;background:#fff;min-width:190px
+  }
+
+  /* ---------- top strip ---------- */
+  .strip{display:grid;grid-template-columns:minmax(300px,1fr) 2fr;gap:14px;margin-bottom:16px}
+  @media(max-width:900px){.strip{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--cyan);padding:12px 14px}
+  .panel.focus{border-top-color:var(--brown);background:var(--warm)}
+  .panel h2{
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;margin:0 0 2px;color:var(--brown)
+  }
+  .panel .hint{font-size:10.5px;color:var(--muted);margin:0 0 9px;letter-spacing:.04em}
+
+  .focus-row{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+  .focus-num{
+    font-size:11px;color:#fff;background:var(--brown);width:19px;height:19px;flex:0 0 19px;
+    display:flex;align-items:center;justify-content:center;border-radius:50%
+  }
+  .focus-row{align-items:flex-start}
+  .focus-row .ftxt{
+    flex:1;font-family:var(--font);font-size:15px;border:0;border-bottom:1px solid var(--line);
+    background:transparent;padding:3px 2px;resize:none;overflow:hidden;line-height:1.35;
+    height:auto;word-break:break-word
+  }
+  .focus-row .ftxt:focus{outline:none;border-bottom-color:var(--cyan)}
+  .focus-row .ftxt.done{text-decoration:line-through;color:var(--muted)}
+  .focus-num{margin-top:3px}
+
+  .days{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
+  @media(max-width:760px){.days{grid-template-columns:repeat(2,1fr)}}
+  .day{border-left:2px solid var(--line);padding-left:8px}
+  .day .dname{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan-deep);margin-bottom:3px}
+  .day .ddate{font-size:10px;color:var(--muted);margin-bottom:4px}
+  .day textarea{
+    width:100%;min-height:74px;resize:none;overflow:hidden;font-family:var(--font);font-size:12.5px;
+    border:0;background:transparent;padding:0;line-height:1.5
+  }
+  .day textarea:focus{outline:none;background:#fffdf6}
+
+  /* ---------- board ---------- */
+  .board{column-count:4;column-gap:14px}
+  @media(max-width:1250px){.board{column-count:3}}
+  @media(max-width:900px){.board{column-count:2}}
+  @media(max-width:620px){.board{column-count:1}}
+
+  .card{
+    break-inside:avoid;page-break-inside:avoid;background:var(--card);border:1px solid var(--line);
+    margin:0 0 14px;padding:10px 12px 8px;display:inline-block;width:100%
+  }
+  .card.people{border-left:4px solid var(--cyan)}
+  .card.ops{border-left:4px solid var(--brown)}
+  .card.park{border-left:4px solid #8ba888}
+  .card-head{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+  .card-title{
+    font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;
+    border:0;background:transparent;font-family:var(--font);flex:1;padding:2px 0;color:var(--ink);
+    resize:none;overflow:hidden;line-height:1.3;height:auto
+  }
+  .card-title:focus{outline:none;background:#fffdf6}
+  .card-tools{display:flex;gap:2px;opacity:0;transition:.12s}
+  .card:hover .card-tools,.card:focus-within .card-tools{opacity:1}
+  .icon{
+    border:0;background:transparent;color:var(--muted);font-size:13px;padding:2px 4px;
+    letter-spacing:0;text-transform:none;cursor:pointer;line-height:1
+  }
+  .icon:hover{background:var(--warm);color:var(--ink)}
+  .card-note{font-size:10px;color:var(--muted);margin:0 0 7px;letter-spacing:.03em}
+  .grouplabel{
+    font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan-deep);
+    margin:6px 0 2px;padding-bottom:2px;border-bottom:1px solid var(--line)
+  }
+  .grouplabel.mine{color:var(--brown)}
+  .askwrap{display:flex;align-items:center;gap:4px;margin-top:2px}
+  .askdate{
+    font-family:var(--font);font-size:9.5px;border:0;background:transparent;color:var(--muted);
+    padding:0;width:88px;cursor:pointer
+  }
+  .askdate:focus{outline:none;background:#fffdf6}
+  .aged{
+    font-size:9px;letter-spacing:.08em;padding:1px 4px;border-radius:8px;margin-top:3px;
+    background:var(--warm);color:var(--muted);white-space:nowrap
+  }
+  .aged.warn{background:#f6ead2;color:var(--amber)}
+  .aged.hot{background:#f4dcd8;color:var(--red);font-weight:700}
+  .cadence{
+    display:flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:.08em;
+    color:var(--muted);margin:0 0 6px
+  }
+  .cadence .due{color:var(--red);font-weight:700}
+  .cadence button{
+    font-size:9px;padding:2px 6px;border-color:var(--line);color:var(--muted);letter-spacing:.08em
+  }
+
+  ul.items{list-style:none;margin:0;padding:0}
+  li.item{display:flex;align-items:flex-start;gap:7px;padding:3px 0;border-bottom:1px dotted #ece7dd}
+  li.item:last-child{border-bottom:0}
+  .chk{
+    appearance:none;-webkit-appearance:none;width:13px;height:13px;flex:0 0 13px;margin-top:3px;
+    border:1.5px solid var(--muted);border-radius:2px;background:#fff;cursor:pointer
+  }
+  .chk:checked{background:var(--cyan);border-color:var(--cyan)}
+  .chk:checked::after{content:"";display:block;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg);margin:0 auto}
+  .itxt{
+    flex:1;border:0;background:transparent;font-family:var(--font);font-size:13px;padding:1px 0;
+    color:var(--ink);min-width:40px;resize:none;overflow:hidden;line-height:1.4;
+    height:auto;display:block;word-break:break-word
+  }
+  .itxt:focus{outline:none;background:#fffdf6}
+  li.done .itxt{text-decoration:line-through;color:var(--muted)}
+  .age{
+    font-size:9px;letter-spacing:.08em;padding:1px 4px;border-radius:8px;margin-top:3px;
+    background:var(--warm);color:var(--muted);white-space:nowrap;cursor:help
+  }
+  .age.warn{background:#f6ead2;color:var(--amber)}
+  .age.hot{background:#f4dcd8;color:var(--red);font-weight:700}
+  .flag{border:0;background:transparent;cursor:pointer;font-size:11px;padding:1px 3px;margin-top:2px;color:#d7d0c4;line-height:1}
+  .flag.on{color:var(--amber)}
+  .flag.wait.on{color:var(--cyan-deep)}
+  .add{
+    width:100%;border:0;border-top:1px solid var(--line);background:transparent;font-family:var(--font);
+    font-size:12.5px;padding:6px 0 2px;color:var(--ink);margin-top:4px
+  }
+  .add::placeholder{color:#bdb5a8;letter-spacing:.04em}
+  .add:focus{outline:none}
+
+  /* ---------- done / history ---------- */
+  .done-panel{margin-top:20px;border-top:3px solid var(--brown);padding-top:12px}
+  .done-panel h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brown);margin:0 0 8px}
+  .done-list{column-count:3;column-gap:20px;font-size:12.5px}
+  @media(max-width:900px){.done-list{column-count:1}}
+  .done-list div{break-inside:avoid;padding:2px 0;color:var(--muted)}
+  .done-list span.sec{color:var(--cyan-deep);font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+  .empty{color:var(--muted);font-size:12px;font-style:italic}
+
+  details.history{margin-top:18px;border-top:1px solid var(--line);padding-top:10px}
+  details.history summary{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);cursor:pointer}
+  .hweek{margin:10px 0 0;font-size:12.5px}
+  .hweek b{font-size:11px;letter-spacing:.12em;color:var(--brown)}
+
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--brown);color:#fff;
+    padding:9px 16px;font-size:12px;letter-spacing:.08em;border-radius:2px;opacity:0;pointer-events:none;
+    transition:opacity .2s;z-index:50
+  }
+  .toast.show{opacity:1}
+  .legend{font-size:10.5px;color:var(--muted);margin-top:26px;line-height:1.7;border-top:1px solid var(--line);padding-top:10px}
+  .legend b{color:var(--brown);letter-spacing:.1em;font-size:10px;text-transform:uppercase}
+
+  /* ---------- print ---------- */
+  @page{size:letter landscape;margin:.4in}
+  @media print{
+    body{background:#fff;font-size:10.5px}
+    .wrap{padding:0;max-width:none}
+    .toolbar,.card-tools,.add,.legend,details.history,.toast,.icon,#fontPick{display:none !important}
+    .masthead{border-bottom:2px solid #000;margin-bottom:8px}
+    .mast-title{font-size:19px}
+    .panel{border:1px solid #999;border-top:3px solid #000;padding:8px 10px}
+    .strip{gap:10px;margin-bottom:10px}
+    .board{column-count:4;column-gap:10px}
+    .card{border:1px solid #999;margin-bottom:10px;padding:7px 9px}
+    .card.people,.card.ops,.card.park{border-left:3px solid #000}
+    .card-title{font-size:10.5px}
+    .itxt,.ftxt{font-size:10.5px}
+    .day textarea{min-height:58px;font-size:10px}
+    li.item{border-bottom:1px dotted #ccc}
+    .age{border:1px solid #bbb;background:#fff !important;color:#000 !important}
+    input,textarea{color:#000 !important;overflow:visible !important}
+    .itxt,.ftxt,.card-title,.day textarea{height:auto !important}
+    .hide-print-empty{display:none}
+    body.print-one .strip,
+    body.print-one .done-panel,
+    body.print-one .card:not(.print-target){display:none !important}
+    body.print-one .board{column-count:1}
+    body.print-one .card.print-target{border-left:3px solid #000;padding:12px 14px}
+    body.print-one .card.print-target .itxt{font-size:12px}
+    .cadence button{display:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1 class="mast-title">Weekly Agenda</h1>
+      <p class="mast-sub" id="ownerLine" contenteditable="true">Buffalo Grove Park District &nbsp;&middot;&nbsp; Director of Recreation and Operations</p>
+    </div>
+    <div class="mast-right">
+      <div class="weekfield">
+        <label for="weekOf">Week of</label>
+        <input type="date" id="weekOf">
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="primary" id="btnNewWeek">Start new week</button>
+    <button id="btnPrint">Print</button>
+    <button id="btnAddCard">Add a section</button>
+    <button class="ghost" id="btnCopy">Copy as text</button>
+    <button class="ghost" id="btnExport">Save backup file</button>
+    <button class="ghost" id="btnImport">Open backup file</button>
+    <button class="ghost" id="btnClear">Clear all items</button>
+    <div class="spacer"></div>
+    <select class="searchbox" id="fontPick" title="Change the typeface" style="min-width:0"></select>
+    <input class="searchbox" id="search" placeholder="Find an item">
+    <input type="file" id="fileInput" accept=".json" hidden>
+  </div>
+
+  <div class="strip">
+    <div class="panel focus">
+      <h2>The three that matter</h2>
+      <p class="hint">If the week goes sideways, these still get done.  Three lines only, on purpose.</p>
+      <div id="focusList"></div>
+    </div>
+    <div class="panel">
+      <h2>Week at a glance</h2>
+      <p class="hint">Meetings, deadlines, coverage, days out of the office.</p>
+      <div class="days" id="days"></div>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="done-panel">
+    <h2>Closed out this week</h2>
+    <div class="done-list" id="doneList"></div>
+  </div>
+
+  <details class="history">
+    <summary>Past weeks</summary>
+    <div id="history"></div>
+  </details>
+
+  <div class="legend">
+    <b>How to use it</b><br>
+    Click any line to edit it.  Type in the bottom line of a section and press Enter to add an item.<br>
+    <b>Age tag</b> The number beside an item is how many weeks it has been carried.  At 4 weeks it turns amber, at 8 it turns red.  That is the signal to schedule it, delegate it, or kill it.<br>
+    <b>Star</b> marks a commitment you made to someone else.  <b>W</b> marks something you are waiting on from someone else, which is the one category most likely to go missing.<br>
+    <b>Start new week</b> files everything checked off into Closed out this week, bumps the date forward seven days, and ages the rest.<br>
+    <b>Superintendent cards</b> hold two lists.  Ask them for their half before the meeting and work that first.  The printer icon on a card prints that card alone, on its own page.<br>
+    <b>Waiting on</b> items take the date you asked.  The day count turns amber at a week and red at two.<br>
+    <b>Monthly review</b> does not age weekly and is not meant to be worked weekly.  Mark it reviewed and it will tell you when a month has gone by.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday"];
+  var uid = function(){ return Math.random().toString(36).slice(2,9); };
+
+  function grow(el){
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = (el.scrollHeight + 1) + "px";
+  }
+  function growAll(){
+    var list = document.querySelectorAll(".itxt, .ftxt, .card-title, .day textarea");
+    for (var i = 0; i < list.length; i++) grow(list[i]);
+  }
+
+  var FONTS = [
+    { name:"Clean sans (default)", css:'Aptos, "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif' },
+    { name:"Neutral grotesque",    css:'"Helvetica Neue", Helvetica, Arial, sans-serif' },
+    { name:"Narrow, fits more",    css:'"Franklin Gothic Book", "Franklin Gothic Medium", "Arial Narrow", "Roboto Condensed", Arial, sans-serif' },
+    { name:"Typewriter",           css:'"IBM Plex Mono", "Courier New", Consolas, monospace' },
+    { name:"Serif, document feel", css:'Georgia, "Iowan Old Style", "Times New Roman", serif' },
+    { name:"Book serif",           css:'"Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif' },
+    { name:"Geometric (original)", css:'Futura, "Century Gothic", "Avenir Next", Avenir, sans-serif' }
+  ];
+
+  /* ---------------- storage: works in the browser and in the Claude app ---------------- */
+  var Store = {
+    key: "weekly-agenda-v3",
+    read: function(cb){
+      var self = this;
+      try{
+        if (window.storage && window.storage.get){
+          window.storage.get(self.key).then(function(r){
+            cb(r && r.value ? JSON.parse(r.value) : null);
+          }).catch(function(){ cb(self.localRead()); });
+          return;
+        }
+      }catch(e){}
+      cb(this.localRead());
+    },
+    localRead: function(){
+      try{ var v = window.localStorage.getItem(this.key); return v ? JSON.parse(v) : null; }
+      catch(e){ return null; }
+    },
+    write: function(data){
+      var s = JSON.stringify(data);
+      try{
+        if (window.storage && window.storage.set){
+          window.storage.set(this.key, s).catch(function(){});
+        }
+      }catch(e){}
+      try{ window.localStorage.setItem(this.key, s); }catch(e){}
+    }
+  };
+
+  /* ---------------- default board ---------------- */
+  function mondayOf(d){
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff = (x.getDay() + 6) % 7;
+    x.setDate(x.getDate() - diff);
+    return x;
+  }
+  function iso(d){
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  function it(text, opts){
+    opts = opts || {};
+    return { id: uid(), text: text, done: false, star: !!opts.star, wait: !!opts.wait,
+             age: opts.age || 0, side: opts.side || null, asked: opts.asked || "" };
+  }
+
+  function blanks(n, side){
+    var out = [];
+    for (var i = 0; i < (n || 3); i++) out.push(it("", { side: side }));
+    return out;
+  }
+  function splitBlanks(){
+    return blanks(2,"theirs").concat(blanks(2,"mine"));
+  }
+
+  function defaultData(){
+    return {
+      weekOf: iso(mondayOf(new Date())),
+      font: FONTS[0].css,
+      owner: "Buffalo Grove Park District &nbsp;&middot;&nbsp; Director of Recreation and Operations",
+      focus: [
+        { id: uid(), text: "", done:false },
+        { id: uid(), text: "", done:false },
+        { id: uid(), text: "", done:false }
+      ],
+      days: ["","","","",""],
+      sections: [
+        { id: uid(), title:"Erika and the board", kind:"people", note:"Decisions you need from her, and anything headed for a packet.", items:blanks() },
+        { id: uid(), title:"Waiting on", kind:"ops", askDate:true, note:"Handed off and not back yet.  Set the date you asked.", items:blanks() },
+        { id: uid(), title:"Chuck", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
+        { id: uid(), title:"Diana", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
+        { id: uid(), title:"Brian", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
+        { id: uid(), title:"Chris", kind:"people", split:true, note:"One on one agenda.  Their list first, then yours.  Clear it after the meeting.", items:splitBlanks() },
+        { id: uid(), title:"Tim, parks and facilities", kind:"park", note:"Field prep, work orders, project sequencing.", items:blanks() },
+        { id: uid(), title:"Mike, marketing and communications", kind:"people", note:"Brochure deadlines, campaign asks, anything the public sees.", items:blanks() },
+        { id: uid(), title:"Dan, finance and budget", kind:"ops", note:"Budget calendar, variance, purchasing, P card.", items:blanks() },
+        { id: uid(), title:"People and staffing", kind:"ops", note:"Evals, hiring, growth plans, seasonal coverage.", items:blanks() },
+        { id: uid(), title:"Risk, safety and compliance", kind:"ops", note:"Incidents, ADA and inclusion requests, certifications, background checks, training.", items:blanks() },
+        { id: uid(), title:"Agreements, IGAs and partners", kind:"ops", note:"Every contract with a date on it.  School districts, village, FOP, BGRA, vendors.", items:blanks() },
+        { id: uid(), title:"Capital projects and facilities", kind:"park", note:"Owner, next milestone, next decision needed from you.", items:blanks() },
+        { id: uid(), title:"Data and systems", kind:"ops", note:"SmartRec, dashboards, Microsoft 365, AI policy.", items:blanks() },
+        { id: uid(), title:"Strategic, tied to the pillars", kind:"ops", note:"If an item here does not map to a goal, ask why it is on the list.", items:blanks() },
+        { id: uid(), title:"Monthly review", kind:"park", cadence:"monthly", reviewed:"",
+          note:"Not this week.  Nothing here ages weekly.  Work the list once a month and delete without guilt.", items:blanks() }
+      ],
+      archive: []
+    };
+  }
+
+  var data = null;
+  var filter = "";
+
+  /* ---------------- render ---------------- */
+  function fmtDate(isoStr, offset){
+    var p = isoStr.split("-");
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    d.setDate(d.getDate() + (offset||0));
+    return (d.getMonth()+1) + "/" + d.getDate();
+  }
+
+  function renderFocus(){
+    var box = document.getElementById("focusList");
+    box.innerHTML = "";
+    data.focus.forEach(function(f, i){
+      var row = document.createElement("div");
+      row.className = "focus-row";
+      var n = document.createElement("span");
+      n.className = "focus-num"; n.textContent = i+1;
+      var inp = document.createElement("textarea");
+      inp.className = "ftxt" + (f.done ? " done" : "");
+      inp.rows = 1;
+      inp.value = f.text; inp.placeholder = "Name the outcome, not the topic";
+      inp.addEventListener("input", function(){ f.text = inp.value; grow(inp); save(); });
+      inp.addEventListener("keydown", function(e){ if (e.key === "Enter") e.preventDefault(); });
+      var chk = document.createElement("input");
+      chk.type = "checkbox"; chk.className = "chk"; chk.checked = f.done;
+      chk.addEventListener("change", function(){
+        f.done = chk.checked;
+        inp.className = "ftxt" + (f.done ? " done" : "");
+        save();
+      });
+      row.appendChild(n); row.appendChild(inp); row.appendChild(chk);
+      box.appendChild(row);
+      grow(inp);
+    });
+  }
+
+  function renderDays(){
+    var box = document.getElementById("days");
+    box.innerHTML = "";
+    DAYS.forEach(function(name, i){
+      var d = document.createElement("div");
+      d.className = "day";
+      var h = document.createElement("div"); h.className = "dname"; h.textContent = name.slice(0,3);
+      var dt = document.createElement("div"); dt.className = "ddate"; dt.textContent = fmtDate(data.weekOf, i);
+      var ta = document.createElement("textarea");
+      ta.value = data.days[i] || "";
+      ta.addEventListener("input", function(){ data.days[i] = ta.value; save(); });
+      ta.addEventListener("input", function(){ grow(ta); });
+      d.appendChild(h); d.appendChild(dt); d.appendChild(ta);
+      box.appendChild(d);
+      grow(ta);
+    });
+  }
+
+  function ageBadge(item){
+    if (!item.age) return null;
+    var s = document.createElement("span");
+    s.className = "age" + (item.age >= 8 ? " hot" : item.age >= 4 ? " warn" : "");
+    s.textContent = item.age + "w";
+    s.title = "Carried for " + item.age + " week" + (item.age>1?"s":"") + ".  Schedule it, hand it off, or take it off the list.";
+    return s;
+  }
+
+  function renderBoard(){
+    var board = document.getElementById("board");
+    board.innerHTML = "";
+    data.sections.forEach(function(sec, si){
+      var visible = sec.items.filter(matches);
+      if (filter && visible.length === 0 && !sec.title.toLowerCase().includes(filter)) return;
+
+      var card = document.createElement("div");
+      card.className = "card " + (sec.kind || "ops");
+      card.setAttribute("data-sec", sec.id);
+
+      var head = document.createElement("div"); head.className = "card-head";
+      var t = document.createElement("textarea");
+      t.className = "card-title"; t.rows = 1; t.value = sec.title;
+      t.addEventListener("input", function(){ sec.title = t.value; grow(t); save(); });
+      t.addEventListener("keydown", function(e){ if (e.key === "Enter") e.preventDefault(); });
+      var tools = document.createElement("div"); tools.className = "card-tools";
+      tools.appendChild(iconBtn("\u2190","Move left", function(){ moveSection(si,-1); }));
+      tools.appendChild(iconBtn("\u2192","Move right", function(){ moveSection(si,1); }));
+      tools.appendChild(iconBtn("\u2399","Print this section on its own page", function(){ printOne(sec.id); }));
+      tools.appendChild(iconBtn("\u29c9","Split into their agenda and yours", function(){
+        sec.split = !sec.split;
+        if (sec.split) sec.items.forEach(function(i){ if (!i.side) i.side = "theirs"; });
+        save(); renderBoard();
+      }));
+      tools.appendChild(iconBtn("\u00d7","Delete this section", function(){
+        if (confirm("Delete the section \"" + sec.title + "\" and its items?")){
+          data.sections.splice(si,1); save(); renderBoard();
+        }
+      }));
+      head.appendChild(t); head.appendChild(tools);
+      card.appendChild(head);
+
+      if (sec.note){
+        var note = document.createElement("p");
+        note.className = "card-note"; note.textContent = sec.note;
+        note.title = "Click to edit"; note.contentEditable = "true";
+        note.addEventListener("input", function(){ sec.note = note.textContent; save(); });
+        card.appendChild(note);
+      }
+
+      if (sec.cadence === "monthly") card.appendChild(cadenceBar(sec));
+
+      if (sec.split){
+        card.appendChild(groupLabel("Their agenda, first", "theirs"));
+        card.appendChild(itemList(sec, visible, "theirs"));
+        card.appendChild(addLine(sec, "theirs", "+ add to their list"));
+        card.appendChild(groupLabel("Your agenda", "mine"));
+        card.appendChild(itemList(sec, visible, "mine"));
+        card.appendChild(addLine(sec, "mine", "+ add to your list"));
+      } else {
+        card.appendChild(itemList(sec, visible, null));
+        card.appendChild(addLine(sec, null, "+ add an item"));
+      }
+
+      board.appendChild(card);
+    });
+    growAll();
+  }
+
+  function groupLabel(text, side){
+    var d = document.createElement("div");
+    d.className = "grouplabel" + (side === "mine" ? " mine" : "");
+    d.textContent = text;
+    return d;
+  }
+
+  function itemList(sec, visible, side){
+    var ul = document.createElement("ul"); ul.className = "items";
+    var src = filter ? visible : sec.items;
+    src.forEach(function(item){
+      if (side && (item.side || "theirs") !== side) return;
+      if (!side && sec.split) return;
+      ul.appendChild(renderItem(sec, item));
+    });
+    return ul;
+  }
+
+  function addLine(sec, side, placeholder){
+    var add = document.createElement("input");
+    add.className = "add"; add.placeholder = placeholder;
+    add.setAttribute("data-side", side || "");
+    add.addEventListener("keydown", function(e){
+      if (e.key === "Enter" && add.value.trim()){
+        var fresh = it(add.value.trim(), { side: side });
+        if (side === "theirs"){
+          var last = -1;
+          sec.items.forEach(function(x,i){ if ((x.side||"theirs") === "theirs") last = i; });
+          sec.items.splice(last + 1, 0, fresh);
+        } else {
+          sec.items.push(fresh);
+        }
+        add.value = ""; save(); renderBoard();
+        setTimeout(function(){
+          var again = document.querySelector('.card[data-sec="' + sec.id + '"] .add[data-side="' + (side||"") + '"]');
+          if (again) again.focus();
+        }, 0);
+      }
+    });
+    return add;
+  }
+
+  function cadenceBar(sec){
+    var bar = document.createElement("div");
+    bar.className = "cadence";
+    var span = document.createElement("span");
+    var days = sec.reviewed ? daysSince(sec.reviewed) : null;
+    if (days === null){
+      span.innerHTML = '<span class="due">Not reviewed yet</span>';
+    } else if (days >= 30){
+      span.innerHTML = '<span class="due">Last reviewed ' + days + ' days ago, due</span>';
+    } else {
+      span.textContent = "Last reviewed " + days + " days ago";
+    }
+    var b = document.createElement("button");
+    b.textContent = "Mark reviewed";
+    b.addEventListener("click", function(){
+      sec.reviewed = iso(new Date()); save(); renderBoard();
+      toast("Monthly review logged");
+    });
+    bar.appendChild(span); bar.appendChild(b);
+    return bar;
+  }
+
+  function daysSince(isoStr){
+    var p = isoStr.split("-");
+    var then = new Date(+p[0], +p[1]-1, +p[2]);
+    var now = new Date();
+    return Math.max(0, Math.round((new Date(now.getFullYear(),now.getMonth(),now.getDate()) - then) / 86400000));
+  }
+
+  function renderItem(sec, item){
+    var li = document.createElement("li");
+    li.className = "item" + (item.done ? " done" : "");
+
+    var chk = document.createElement("input");
+    chk.type = "checkbox"; chk.className = "chk"; chk.checked = item.done;
+    chk.addEventListener("change", function(){
+      item.done = chk.checked;
+      li.className = "item" + (item.done ? " done" : "");
+      save(); renderDone();
+    });
+
+    var txt = document.createElement("textarea");
+    txt.className = "itxt"; txt.rows = 1; txt.value = item.text;
+    txt.addEventListener("input", function(){ item.text = txt.value; grow(txt); save(); });
+    txt.addEventListener("keydown", function(e){
+      if (e.key === "Enter"){
+        e.preventDefault();
+        var i = sec.items.indexOf(item);
+        sec.items.splice(i+1, 0, it("", { side: item.side }));
+        save(); renderBoard();
+      }
+      if (e.key === "Backspace" && txt.value === ""){
+        e.preventDefault();
+        sec.items.splice(sec.items.indexOf(item), 1);
+        save(); renderBoard();
+      }
+    });
+
+    var star = document.createElement("button");
+    star.className = "flag" + (item.star ? " on" : "");
+    star.textContent = "\u2605"; star.title = "A commitment you made to someone else";
+    star.addEventListener("click", function(){
+      item.star = !item.star; star.className = "flag" + (item.star ? " on":""); save();
+    });
+
+    var wait = document.createElement("button");
+    wait.className = "flag wait" + (item.wait ? " on" : "");
+    wait.textContent = "W"; wait.title = "Waiting on someone else";
+    wait.addEventListener("click", function(){
+      item.wait = !item.wait; wait.className = "flag wait" + (item.wait ? " on":""); save();
+    });
+
+    li.appendChild(chk); li.appendChild(txt);
+
+    if (sec.askDate){
+      var wrap = document.createElement("span");
+      wrap.className = "askwrap";
+      var dt = document.createElement("input");
+      dt.type = "date"; dt.className = "askdate"; dt.value = item.asked || "";
+      dt.title = "Date you asked";
+      dt.addEventListener("change", function(){
+        item.asked = dt.value; save(); renderBoard();
+      });
+      wrap.appendChild(dt);
+      if (item.asked){
+        var n = daysSince(item.asked);
+        var chip = document.createElement("span");
+        chip.className = "aged" + (n >= 14 ? " hot" : n >= 7 ? " warn" : "");
+        chip.textContent = n + "d";
+        chip.title = "Asked " + n + " day" + (n===1?"":"s") + " ago.";
+        wrap.appendChild(chip);
+      }
+      li.appendChild(wrap);
+    }
+
+    var b = ageBadge(item); if (b) li.appendChild(b);
+    li.appendChild(wait); li.appendChild(star);
+    return li;
+  }
+
+  function iconBtn(label, title, fn){
+    var b = document.createElement("button");
+    b.className = "icon"; b.textContent = label; b.title = title;
+    b.addEventListener("click", fn);
+    return b;
+  }
+
+  function printOne(secId){
+    var card = document.querySelector('.card[data-sec="' + secId + '"]');
+    if (!card) return;
+    card.classList.add("print-target");
+    document.body.classList.add("print-one");
+    window.print();
+    setTimeout(function(){
+      document.body.classList.remove("print-one");
+      card.classList.remove("print-target");
+      growAll();
+    }, 300);
+  }
+
+  function moveSection(i, dir){
+    var j = i + dir;
+    if (j < 0 || j >= data.sections.length) return;
+    var s = data.sections.splice(i,1)[0];
+    data.sections.splice(j,0,s);
+    save(); renderBoard();
+  }
+
+  function matches(item){
+    if (!filter) return true;
+    return (item.text || "").toLowerCase().indexOf(filter) !== -1;
+  }
+
+  function renderDone(){
+    var box = document.getElementById("doneList");
+    box.innerHTML = "";
+    var any = false;
+    data.sections.forEach(function(sec){
+      sec.items.filter(function(i){ return i.done && i.text.trim(); }).forEach(function(i){
+        any = true;
+        var d = document.createElement("div");
+        d.innerHTML = '<span class="sec">' + esc(sec.title) + '</span> &nbsp;' + esc(i.text);
+        box.appendChild(d);
+      });
+    });
+    data.focus.filter(function(f){ return f.done && f.text.trim(); }).forEach(function(f){
+      any = true;
+      var d = document.createElement("div");
+      d.innerHTML = '<span class="sec">Focus</span> &nbsp;' + esc(f.text);
+      box.appendChild(d);
+    });
+    if (!any){
+      var e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "Nothing checked off yet.  This list is what you bring to your one on one with Erika.";
+      box.appendChild(e);
+    }
+  }
+
+  function renderHistory(){
+    var box = document.getElementById("history");
+    box.innerHTML = "";
+    if (!data.archive.length){
+      box.innerHTML = '<p class="empty">Weeks you have closed out will collect here.</p>';
+      return;
+    }
+    data.archive.slice().reverse().forEach(function(w){
+      var d = document.createElement("div");
+      d.className = "hweek";
+      var lines = w.completed.map(function(c){ return "&nbsp;&nbsp;" + esc(c.section) + ": " + esc(c.text); }).join("<br>");
+      d.innerHTML = "<b>Week of " + esc(w.weekOf) + "</b> &nbsp;(" + w.completed.length + " closed)<br>" + lines;
+      box.appendChild(d);
+    });
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c];
+    });
+  }
+
+  function applyFont(){
+    var css = data.font || FONTS[0].css;
+    document.documentElement.style.setProperty("--font", css);
+    var sel = document.getElementById("fontPick");
+    if (!sel.options.length){
+      FONTS.forEach(function(f){
+        var o = document.createElement("option");
+        o.value = f.css; o.textContent = f.name;
+        sel.appendChild(o);
+      });
+    }
+    sel.value = css;
+  }
+
+  function renderAll(){
+    applyFont();
+    document.getElementById("weekOf").value = data.weekOf;
+    document.getElementById("ownerLine").innerHTML = data.owner;
+    renderFocus(); renderDays(); renderBoard(); renderDone(); renderHistory();
+  }
+
+  var saveTimer = null;
+  function save(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function(){ Store.write(data); }, 250);
+  }
+
+  function toast(msg){
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.className = "toast show";
+    setTimeout(function(){ t.className = "toast"; }, 2200);
+  }
+
+  /* ---------------- actions ---------------- */
+  function startNewWeek(){
+    var carried = 0, closed = [];
+    data.sections.forEach(function(sec){
+      sec.items.forEach(function(i){
+        if (i.done && i.text.trim()) closed.push({ section: sec.title, text: i.text });
+      });
+      sec.items = sec.items.filter(function(i){ return !i.done && i.text.trim(); });
+      if (sec.cadence !== "monthly"){
+        sec.items.forEach(function(i){ i.age = (i.age||0) + 1; carried++; });
+      }
+      if (sec.split){
+        if (!sec.items.some(function(i){ return (i.side||"theirs") === "theirs"; })) sec.items.unshift(it("", {side:"theirs"}));
+        if (!sec.items.some(function(i){ return i.side === "mine"; })) sec.items.push(it("", {side:"mine"}));
+      }
+    });
+    data.focus.forEach(function(f){
+      if (f.done && f.text.trim()) closed.push({ section:"Focus", text: f.text });
+    });
+    data.archive.push({ weekOf: data.weekOf, completed: closed });
+    if (data.archive.length > 26) data.archive.shift();
+
+    var p = data.weekOf.split("-");
+    var d = new Date(+p[0], +p[1]-1, +p[2]);
+    d.setDate(d.getDate() + 7);
+    data.weekOf = iso(d);
+    data.days = ["","","","",""];
+    data.focus = [
+      { id: uid(), text:"", done:false },
+      { id: uid(), text:"", done:false },
+      { id: uid(), text:"", done:false }
+    ];
+    save(); renderAll();
+    toast(closed.length + " closed out, " + carried + " carried forward");
+  }
+
+  function asText(){
+    var out = ["WEEKLY AGENDA  |  Week of " + data.weekOf, ""];
+    out.push("THE THREE THAT MATTER");
+    data.focus.forEach(function(f,i){ if (f.text.trim()) out.push("  " + (i+1) + ". " + (f.done?"[x] ":"[ ] ") + f.text); });
+    out.push("");
+    DAYS.forEach(function(n,i){ if ((data.days[i]||"").trim()) out.push(n + ": " + data.days[i].replace(/\n/g,"; ")); });
+    out.push("");
+    data.sections.forEach(function(sec){
+      var live = sec.items.filter(function(i){ return i.text.trim(); });
+      if (!live.length) return;
+      out.push(sec.title.toUpperCase());
+      var lastSide = null;
+      live.forEach(function(i){
+        if (sec.split){
+          var side = i.side || "theirs";
+          if (side !== lastSide){ out.push("  " + (side === "mine" ? "Your agenda:" : "Their agenda:")); lastSide = side; }
+        }
+        out.push("  " + (i.done?"[x] ":"[ ] ") + i.text + (i.age?"  ("+i.age+"w)":"") +
+                 (i.asked?"  (asked "+i.asked+")":"") + (i.wait?"  (waiting)":""));
+      });
+      out.push("");
+    });
+    return out.join("\n");
+  }
+
+  function download(name, text, type){
+    var blob = new Blob([text], { type: type || "text/plain" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+
+  /* ---------------- wire up ---------------- */
+  document.getElementById("btnNewWeek").addEventListener("click", function(){
+    if (confirm("File everything checked off, clear the week, and move the date forward seven days?")) startNewWeek();
+  });
+  document.getElementById("btnPrint").addEventListener("click", function(){ window.print(); });
+  document.getElementById("btnAddCard").addEventListener("click", function(){
+    var name = prompt("Name the section");
+    if (!name) return;
+    data.sections.push({ id: uid(), title: name, kind:"ops", note:"", items:[ it("") ] });
+    save(); renderBoard();
+  });
+  document.getElementById("btnCopy").addEventListener("click", function(){
+    var text = asText();
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast("Copied as plain text"); },
+        function(){ download("weekly-agenda-" + data.weekOf + ".txt", text); });
+    } else {
+      download("weekly-agenda-" + data.weekOf + ".txt", text);
+    }
+  });
+  document.getElementById("btnExport").addEventListener("click", function(){
+    download("weekly-agenda-" + data.weekOf + ".json", JSON.stringify(data,null,2), "application/json");
+    toast("Backup saved to your downloads");
+  });
+  document.getElementById("btnImport").addEventListener("click", function(){
+    document.getElementById("fileInput").click();
+  });
+  document.getElementById("fileInput").addEventListener("change", function(e){
+    var f = e.target.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try{
+        var loaded = JSON.parse(r.result);
+        if (!loaded.sections) throw new Error("no sections");
+        data = loaded; save(); renderAll(); toast("Backup loaded");
+      }catch(err){
+        toast("That file is not a weekly agenda backup");
+      }
+    };
+    r.readAsText(f);
+    e.target.value = "";
+  });
+  document.getElementById("btnClear").addEventListener("click", function(){
+    if (!confirm("Remove every item but keep the section headings?")) return;
+    data.sections.forEach(function(s){ s.items = s.split ? splitBlanks() : blanks(); });
+    data.focus.forEach(function(f){ f.text = ""; f.done = false; });
+    data.days = ["","","","",""];
+    save(); renderAll(); toast("Cleared.  The headings are still here.");
+  });
+  document.getElementById("weekOf").addEventListener("change", function(e){
+    data.weekOf = e.target.value; save(); renderDays();
+  });
+  document.getElementById("ownerLine").addEventListener("input", function(e){
+    data.owner = e.target.innerHTML; save();
+  });
+  document.getElementById("fontPick").addEventListener("change", function(e){
+    data.font = e.target.value;
+    document.documentElement.style.setProperty("--font", data.font);
+    save();
+  });
+  document.getElementById("search").addEventListener("input", function(e){
+    filter = e.target.value.trim().toLowerCase();
+    renderBoard();
+  });
+
+  window.addEventListener("resize", growAll);
+  window.addEventListener("beforeprint", growAll);
+  window.addEventListener("afterprint", growAll);
+
+  /* ---------------- boot ---------------- */
+  Store.read(function(saved){
+    data = saved && saved.sections ? saved : defaultData();
+    if (!data.archive) data.archive = [];
+    if (!data.days) data.days = ["","","","",""];
+    renderAll();
+  });
+})();
+</script>
+</body>
+</html>
